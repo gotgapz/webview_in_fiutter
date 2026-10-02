@@ -42,6 +42,12 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int selectedIndex = 0;
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void openMenu() {
+    wv.setWebViewInteractionEnabled(false);
+    scaffoldKey.currentState?.openDrawer();
+  }
 
   final List<String> titles = [
     'หน้าหลัก',
@@ -81,6 +87,9 @@ class _MainPageState extends State<MainPage> {
     }
 
     return Scaffold(
+      key: scaffoldKey,
+      drawerEnableOpenDragGesture: !kIsWeb,
+      onDrawerChanged: (open) => wv.setWebViewInteractionEnabled(!open),
       appBar: AppBar(
         title: Text(titles[selectedIndex]),
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -89,15 +98,31 @@ class _MainPageState extends State<MainPage> {
           builder: (context) {
             return IconButton(
               icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
+              onPressed: openMenu,
             );
           },
         ),
+        actions: [
+          if (selectedIndex != 0)
+            IconButton(
+              tooltip: 'กลับหน้าหลัก',
+              icon: const Icon(Icons.home_outlined),
+              onPressed: () => _navigate(0),
+            ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                tooltip: 'ปิดเมนู',
+                icon: const Icon(Icons.close),
+                onPressed: () => scaffoldKey.currentState?.closeDrawer(),
+              ),
+            ),
             const DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -199,7 +224,7 @@ class _DrawerItem extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onTap: () {
           // ปิด Drawer ด้วย Context ของ ListTile เองก่อน แล้วค่อยเรียกเปลี่ยนหน้า
-          Navigator.pop(context);
+          Scaffold.of(context).closeDrawer();
           onTap();
         },
       ),
@@ -488,7 +513,7 @@ class _WebViewPageState extends State<WebViewPage> {
               kIsWeb
                   ? wv.getWebViewBody(controller)
                   : WebViewStack(controller: controller as WebViewController),
-              Positioned(
+              if (!kIsWeb) Positioned(
                 left: 0,
                 top: 0,
                 bottom: 0,

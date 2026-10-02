@@ -22,21 +22,25 @@ class _WebViewStackState extends State<WebViewStack> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
+            if (!mounted) return;
             setState(() {
               loadingPercentage = 0;
             });
           },
           onProgress: (progress) {
+            if (!mounted) return;
             setState(() {
               loadingPercentage = progress;
             });
           },
           onPageFinished: (url) {
+            if (!mounted) return;
             setState(() {
               loadingPercentage = 100;
             });
           },
           onNavigationRequest: (navigation) {
+            if (!mounted) return NavigationDecision.prevent;
             final host = Uri.parse(navigation.url).host;
             if (host.contains('youtube.com')) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +58,7 @@ class _WebViewStackState extends State<WebViewStack> {
       ..addJavaScriptChannel(
         'SnackBar',
         onMessageReceived: (message) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(message.message)));
         },
