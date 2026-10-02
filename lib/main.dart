@@ -1,8 +1,8 @@
-import 'dart:convert';
+import 'chapter4_page.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -74,7 +74,7 @@ class _MainPageState extends State<MainPage> {
         page = const NavigationPage();
         break;
       case 4:
-        page = const FetchDataPage();
+        page = const Chapter4Page();
         break;
       default:
         page = const HomePage();
@@ -610,89 +610,4 @@ class SecondRoute extends StatelessWidget {
   }
 }
 
-// ==============================
-// บทที่ 4 — CRUD (Fetch Data)
-// ==============================
-class Album {
-  final int userId;
-  final int id;
-  final String title;
-
-  const Album({
-    required this.userId,
-    required this.id,
-    required this.title,
-  });
-
-  factory Album.fromJson(Map<String, dynamic> json) {
-    return Album(
-      userId: json['userId'],
-      id: json['id'],
-      title: json['title'],
-    );
-  }
-}
-
-Future<Album> fetchAlbum() async {
-  final response = await http.get(
-    Uri.parse('https://jsonplaceholder.typicode.com/albums/1'),
-  );
-
-  if (response.statusCode == 200) {
-    return Album.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-  } else {
-    throw Exception('Failed to load album');
-  }
-}
-
-class FetchDataPage extends StatefulWidget {
-  const FetchDataPage({super.key});
-
-  @override
-  State<FetchDataPage> createState() => _FetchDataPageState();
-}
-
-class _FetchDataPageState extends State<FetchDataPage> {
-  late Future<Album> futureAlbum;
-
-  @override
-  void initState() {
-    super.initState();
-    futureAlbum = fetchAlbum();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: FutureBuilder<Album>(
-        future: futureAlbum,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Card(
-              margin: const EdgeInsets.all(20),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.album, size: 60, color: Colors.purple),
-                    const SizedBox(height: 16),
-                    Text('User ID: ${snapshot.data!.userId}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('ID: ${snapshot.data!.id}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('Title: ${snapshot.data!.title}',
-                        style: const TextStyle(fontSize: 18)),
-                  ],
-                ),
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return Text('${snapshot.error}');
-          }
-          return const CircularProgressIndicator();
-        },
-      ),
-    );
-  }
-}
+//
