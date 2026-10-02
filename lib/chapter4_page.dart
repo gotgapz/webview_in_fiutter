@@ -49,6 +49,11 @@ class Chapter4Store {
 
   String albumKey(String email) => 'chapter4.albums.v1.$email';
 
+  Future<List<String>> memberEmails() async {
+    final accounts = await read(accountsKey);
+    return accounts.keys.toList()..sort();
+  }
+
   Future<List<Map<String, dynamic>>> albums(String email) async {
     final data = await read(albumKey(email));
     return (data['albums'] as List? ?? [])
@@ -90,6 +95,12 @@ class _Chapter4PageState extends State<Chapter4Page> {
   void message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  void showMembers() {
+    Navigator.of(context).push<void>(MaterialPageRoute(
+      builder: (_) => MembersPage(store: store, currentUser: user),
+    ));
   }
 
   Future<void> authenticate() async {
@@ -210,6 +221,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
             Wrap(spacing: 8, runSpacing: 8, children: [
               FilledButton.icon(onPressed: busy ? null : () => edit(), icon: const Icon(Icons.add), label: const Text('เพิ่มอัลบั้ม')),
               OutlinedButton.icon(onPressed: busy ? null : importExamples, icon: const Icon(Icons.cloud_download), label: const Text('ดึงข้อมูลตัวอย่าง')),
+              OutlinedButton.icon(onPressed: busy ? null : showMembers, icon: const Icon(Icons.people), label: const Text('รายชื่อสมาชิกทั้งหมด')),
               TextButton.icon(onPressed: busy ? null : () {
                 setState(() { user = null; albums = []; error = null; register = false; });
               }, icon: const Icon(Icons.logout), label: const Text('ออกจากระบบ')),
@@ -293,9 +305,102 @@ class _Chapter4PageState extends State<Chapter4Page> {
               setState(() { register = !register; error = null; });
               password.clear(); confirm.clear();
             }, child: Text(register ? 'มีบัญชีแล้ว? เข้าสู่ระบบ' : 'ยังไม่มีบัญชี? ลงทะเบียน')),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: busy ? null : showMembers,
+              icon: const Icon(Icons.people),
+              label: const Text('รายชื่อสมาชิกทั้งหมด'),
+            ),
           ]),
         ),
       ),
+    ),
+  );
+}
+
+class MembersPage extends StatefulWidget {
+  const MembersPage({super.key, required this.store, this.currentUser});
+
+  final Chapter4Store store;
+  final String? currentUser;
+
+  @override
+  State<MembersPage> createState() => _MembersPageState();
+}
+
+class _MembersPageState extends State<MembersPage> {
+  late Future<List<String>> members;
+
+  @override
+  void initState() {
+    super.initState();
+    members = widget.store.memberEmails();
+  }
+
+  void refresh() {
+    setState(() => members = widget.store.memberEmails());
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('รายชื่อสมาชิกทั้งหมด'),
+      actions: [
+        IconButton(
+          tooltip: 'โหลดรายชื่อใหม่',
+          onPressed: refresh,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    body: FutureBuilder<List<String>>(
+      future: members,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('โหลดรายชื่อไม่ได้ กรุณาลองอีกครั้ง'),
+              const SizedBox(height: 12),
+              FilledButton(onPressed: refresh, child: const Text('ลองใหม่')),
+            ]),
+          ));
+        }
+        final emails = snapshot.data ?? const <String>[];
+        return Column(children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(children: [
+              const Icon(Icons.groups, size: 48, color: Colors.deepPurple),
+              const SizedBox(height: 8),
+              Text('สมาชิกทั้งหมด ${emails.length} บัญชี',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              const Text('บัญชีที่ลงทะเบียนในเบราว์เซอร์นี้เท่านั้น',
+                  textAlign: TextAlign.center),
+            ]),
+          ),
+          Expanded(
+            child: emails.isEmpty
+                ? const Center(child: Text('ยังไม่มีสมาชิก กรุณาลงทะเบียนก่อน'))
+                : ListView.builder(
+                    itemCount: emails.length,
+                    itemBuilder: (context, index) => Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: ListTile(
+                        leading: CircleAvatar(child: Text('${index + 1}')),
+                        title: Text(emails[index]),
+                        subtitle: emails[index] == widget.currentUser
+                            ? const Text('บัญชีที่กำลังเข้าสู่ระบบ') : null,
+                      ),
+                    ),
+                  ),
+          ),
+        ]);
+      },
     ),
   );
 }
