@@ -43,9 +43,16 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int selectedIndex = 0;
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  bool drawerOpen = false;
+  final List<Widget?> pages = [const HomePage(), null, null, null, null];
+
+  void updateWebInteraction() {
+    wv.setWebViewInteractionEnabled(selectedIndex == 2 && !drawerOpen);
+  }
 
   void openMenu() {
-    wv.setWebViewInteractionEnabled(false);
+    drawerOpen = true;
+    updateWebInteraction();
     scaffoldKey.currentState?.openDrawer();
   }
 
@@ -59,48 +66,35 @@ class _MainPageState extends State<MainPage> {
 
   void _navigate(int index) {
     setState(() {
+      pages[index] ??= switch (index) {
+        1 => const NamerAppPage(),
+        2 => const WebViewPage(),
+        3 => const NavigationPage(),
+        4 => const Chapter4Page(),
+        _ => const HomePage(),
+      };
       selectedIndex = index;
     });
+    updateWebInteraction();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = const HomePage();
-        break;
-      case 1:
-        page = const NamerAppPage();
-        break;
-      case 2:
-        page = const WebViewPage();
-        break;
-      case 3:
-        page = const NavigationPage();
-        break;
-      case 4:
-        page = const Chapter4Page();
-        break;
-      default:
-        page = const HomePage();
-    }
-
     return Scaffold(
       key: scaffoldKey,
       drawerEnableOpenDragGesture: !kIsWeb,
-      onDrawerChanged: (open) => wv.setWebViewInteractionEnabled(!open),
+      onDrawerChanged: (open) {
+        drawerOpen = open;
+        updateWebInteraction();
+      },
       appBar: AppBar(
         title: Text(titles[selectedIndex]),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: openMenu,
-            );
-          },
+        leading: IconButton(
+          tooltip: 'เปิดเมนู',
+          icon: const Icon(Icons.menu),
+          onPressed: openMenu,
         ),
         actions: [
           if (selectedIndex != 0)
@@ -182,7 +176,16 @@ class _MainPageState extends State<MainPage> {
           ],
         ),
       ),
-      body: page,
+      body: IndexedStack(
+        index: selectedIndex,
+        children: [
+          for (var index = 0; index < pages.length; index++)
+            TickerMode(
+              enabled: selectedIndex == index,
+              child: pages[index] ?? const SizedBox.shrink(),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -220,7 +223,7 @@ class _DrawerItem extends StatelessWidget {
         ),
         selected: selected,
         selectedTileColor:
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onTap: () {
           // ปิด Drawer ด้วย Context ของ ListTile เองก่อน แล้วค่อยเรียกเปลี่ยนหน้า
@@ -634,5 +637,3 @@ class SecondRoute extends StatelessWidget {
     );
   }
 }
-
-//
