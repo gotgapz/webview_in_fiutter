@@ -191,7 +191,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
       final next = albums.map((item) => Map<String, dynamic>.from(item)).toList();
       var id = next.fold<int>(0, (maxId, item) => max(maxId, item['id'] as int));
       final knownTitles = next.map((item) => item['title']).toSet();
-      for (final example in examples) {
+      for (final example in examples.take(3)) {
         final title = example['title'] as String;
         if (knownTitles.add(title)) next.add({'id': ++id, 'title': title});
       }
@@ -220,7 +220,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
             const SizedBox(height: 12),
             Wrap(spacing: 8, runSpacing: 8, children: [
               FilledButton.icon(onPressed: busy ? null : () => edit(), icon: const Icon(Icons.add), label: const Text('เพิ่มอัลบั้ม')),
-              OutlinedButton.icon(onPressed: busy ? null : importExamples, icon: const Icon(Icons.cloud_download), label: const Text('ดึงข้อมูลตัวอย่าง')),
+              OutlinedButton.icon(onPressed: busy ? null : importExamples, icon: const Icon(Icons.cloud_download), label: const Text('ดึงตัวอย่าง 3 รายการ')),
               OutlinedButton.icon(onPressed: busy ? null : showMembers, icon: const Icon(Icons.people), label: const Text('รายชื่อสมาชิกทั้งหมด')),
               TextButton.icon(onPressed: busy ? null : () {
                 setState(() { user = null; albums = []; error = null; register = false; });
